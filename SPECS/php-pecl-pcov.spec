@@ -3,7 +3,7 @@
 #
 # remirepo spec file for php-pecl-pcov
 #
-# Copyright (c) 2019 Remi Collet
+# Copyright (c) 2019-2021 Remi Collet
 # License: CC-BY-SA
 # http://creativecommons.org/licenses/by-sa/4.0/
 #
@@ -13,16 +13,20 @@
 %global pecl_name pcov
 %global ini_name  40-%{pecl_name}.ini
 
+%define _debugsource_template %{nil}
+%define debug_package %{nil}
+
 Summary:        Code coverage driver
 Name:           php-pecl-%{pecl_name}
-Version:        1.0.6
-Release:        2%{?dist}
+Version:        1.0.7
+Release:        1%{?dist}
 License:        PHP
-URL:            http://pecl.php.net/package/%{pecl_name}
-Source0:        http://pecl.php.net/get/%{pecl_name}-%{version}.tgz
+URL:            https://pecl.php.net/package/%{pecl_name}
+Source0:        https://pecl.php.net/get/%{pecl_name}-%{version}.tgz
 
+BuildRequires:  make
 BuildRequires:  gcc
-BuildRequires:  php-devel > 7.1
+BuildRequires:  php-devel >= 7.1
 BuildRequires:  php-pear
 
 Requires:       php(zend-abi) = %{php_zend_api}
@@ -171,6 +175,9 @@ REPORT_EXIT_STATUS=1 \
 
 
 %changelog
+* Fri Mar 19 2021 Remi Collet <remi@remirepo.net> - 1.0.7-1
+- update to 1.0.7
+
 * Thu Jan 30 2020 Fedora Release Engineering <releng@fedoraproject.org> - 1.0.6-2
 - Rebuilt for https://fedoraproject.org/wiki/Fedora_32_Mass_Rebuild
 
