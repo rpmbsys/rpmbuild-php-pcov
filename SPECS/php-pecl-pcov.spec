@@ -18,7 +18,7 @@
 
 Summary:        Code coverage driver
 Name:           php-pecl-%{pecl_name}
-Version:        1.0.7
+Version:        1.0.10
 Release:        1%{?dist}
 License:        PHP
 URL:            https://pecl.php.net/package/%{pecl_name}
@@ -175,6 +175,9 @@ REPORT_EXIT_STATUS=1 \
 
 
 %changelog
+* Wed Nov 24 2021 Remi Collet <remi@remirepo.net> - 1.0.10-1
+- update to 1.0.10
+
 * Fri Mar 19 2021 Remi Collet <remi@remirepo.net> - 1.0.7-1
 - update to 1.0.7
 
