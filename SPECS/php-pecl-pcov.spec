@@ -18,7 +18,7 @@
 
 Summary:        Code coverage driver
 Name:           php-pecl-%{pecl_name}
-Version:        1.0.10
+Version:        1.0.11
 Release:        1%{?dist}
 License:        PHP
 URL:            https://pecl.php.net/package/%{pecl_name}
@@ -134,7 +134,7 @@ done
 cd NTS
 %{_bindir}/php --no-php-ini \
     --define extension=modules/%{pecl_name}.so \
-    --modules | grep %{pecl_name}
+    --modules | grep '^%{pecl_name}$'
 
 : Upstream test suite for NTS extension
 TEST_PHP_EXECUTABLE=%{_bindir}/php \
@@ -149,7 +149,7 @@ REPORT_EXIT_STATUS=1 \
 cd ../ZTS
 %{__ztsphp} --no-php-ini \
     --define extension=modules/%{pecl_name}.so \
-    --modules | grep %{pecl_name}
+    --modules | grep '^%{pecl_name}$'
 
 : Upstream test suite for ZTS extension
 TEST_PHP_EXECUTABLE=%{__ztsphp} \
@@ -175,6 +175,9 @@ REPORT_EXIT_STATUS=1 \
 
 
 %changelog
+* Tue Dec 21 2021 Remi Collet <remi@remirepo.net> - 1.0.11-1
+- update to 1.0.11
+
 * Wed Nov 24 2021 Remi Collet <remi@remirepo.net> - 1.0.10-1
 - update to 1.0.10
 
