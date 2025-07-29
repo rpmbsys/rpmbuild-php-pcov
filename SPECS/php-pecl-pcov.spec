@@ -3,26 +3,26 @@
 #
 # remirepo spec file for php-pecl-pcov
 #
-# Copyright (c) 2019-2021 Remi Collet
-# License: CC-BY-SA
+# Copyright (c) 2019-2024 Remi Collet
+# License: CC-BY-SA-4.0
 # http://creativecommons.org/licenses/by-sa/4.0/
 #
 # Please, preserve the changelog entries
 #
-%global with_zts  0%{!?_without_zts:%{?__ztsphp:1}}
+
 %global pecl_name pcov
 %global ini_name  40-%{pecl_name}.ini
-
-%define _debugsource_template %{nil}
-%define debug_package %{nil}
+%global sources   %{pecl_name}-%{version}
 
 Summary:        Code coverage driver
 Name:           php-pecl-%{pecl_name}
-Version:        1.0.11
-Release:        1%{?dist}
-License:        PHP
+Version:        1.0.12
+Release:        2%{?dist}
+License:        PHP-3.01
 URL:            https://pecl.php.net/package/%{pecl_name}
-Source0:        https://pecl.php.net/get/%{pecl_name}-%{version}.tgz
+Source0:        https://pecl.php.net/get/%{sources}.tgz
+
+ExcludeArch:    %{ix86}
 
 BuildRequires:  make
 BuildRequires:  gcc
@@ -44,15 +44,13 @@ A self contained php-code-coverage compatible driver for PHP7.
 
 %prep
 %setup -q -c
-mv %{pecl_name}-%{version} NTS
 
 # Don't install/register tests
 sed -e 's/role="test"/role="src"/' \
     -e '/LICENSE/s/role="doc"/role="src"/' \
     -i package.xml
 
-cd NTS
-
+cd %{sources}
 # Sanity check, really often broken
 extver=$(sed -n '/#define PHP_PCOV_VERSION/{s/.* "//;s/".*$//;p}' php_pcov.h)
 if test "x${extver}" != "x%{version}%{?prever:-%{prever}}"; then
@@ -60,11 +58,6 @@ if test "x${extver}" != "x%{version}%{?prever:-%{prever}}"; then
    exit 1
 fi
 cd ..
-
-%if %{with_zts}
-# Duplicate source tree for NTS / ZTS build
-cp -pr NTS ZTS
-%endif
 
 # Create configuration file
 cat << 'EOF' | tee %{ini_name}
@@ -86,103 +79,132 @@ EOF
 
 
 %build
-cd NTS
-%{_bindir}/phpize
+cd %{sources}
+%{__phpize}
+sed -e 's/INSTALL_ROOT/DESTDIR/' -i build/Makefile.global
+
 %configure \
     --enable-pcov \
     --with-libdir=%{_lib} \
-    --with-php-config=%{_bindir}/php-config
+    --with-php-config=%{__phpconfig}
 
-make %{?_smp_mflags}
-
-%if %{with_zts}
-cd ../ZTS
-%{_bindir}/zts-phpize
-%configure \
-    --enable-pcov \
-    --with-libdir=%{_lib} \
-    --with-php-config=%{_bindir}/zts-php-config
-
-make %{?_smp_mflags}
-%endif
+%make_build
 
 
 %install
-make -C NTS install INSTALL_ROOT=%{buildroot}
+cd %{sources}
 
-# install config file
-install -D -m 644 %{ini_name} %{buildroot}%{php_inidir}/%{ini_name}
+: Install the extension
+%make_install
 
-# Install XML package description
-install -D -m 644 package.xml %{buildroot}%{pecl_xmldir}/%{name}.xml
+: Install config file
+install -D -m 644 ../%{ini_name} %{buildroot}%{php_inidir}/%{ini_name}
 
-%if %{with_zts}
-make -C ZTS install INSTALL_ROOT=%{buildroot}
+: Install XML package description
+install -D -m 644 ../package.xml %{buildroot}%{pecl_xmldir}/%{name}.xml
 
-install -D -m 644 %{ini_name} %{buildroot}%{php_ztsinidir}/%{ini_name}
-%endif
-
-# Documentation
-cd NTS
+: Install the Documentation
 for i in $(grep 'role="doc"' ../package.xml | sed -e 's/^.*name="//;s/".*$//')
 do install -Dpm 644 $i %{buildroot}%{pecl_docdir}/%{pecl_name}/$i
 done
 
 
 %check
+cd %{sources}
+
 : Minimal load test for NTS extension
-cd NTS
-%{_bindir}/php --no-php-ini \
+%{__php} --no-php-ini \
     --define extension=modules/%{pecl_name}.so \
     --modules | grep '^%{pecl_name}$'
 
 : Upstream test suite for NTS extension
-TEST_PHP_EXECUTABLE=%{_bindir}/php \
 TEST_PHP_ARGS="-n -d extension=$PWD/modules/%{pecl_name}.so" \
-NO_INTERACTION=1 \
-REPORT_EXIT_STATUS=1 \
-%{_bindir}/php -n run-tests.php --show-diff
-
-
-%if %{with_zts}
-: Minimal load test for ZTS extension
-cd ../ZTS
-%{__ztsphp} --no-php-ini \
-    --define extension=modules/%{pecl_name}.so \
-    --modules | grep '^%{pecl_name}$'
-
-: Upstream test suite for ZTS extension
-TEST_PHP_EXECUTABLE=%{__ztsphp} \
-TEST_PHP_ARGS="-n -d extension=$PWD/modules/%{pecl_name}.so" \
-NO_INTERACTION=1 \
-REPORT_EXIT_STATUS=1 \
-%{__ztsphp} -n run-tests.php --show-diff
-%endif
+%{__php} -n run-tests.php -q -P --show-diff
 
 
 %files
-%license NTS/LICENSE
+%license %{sources}/LICENSE
 %doc %{pecl_docdir}/%{pecl_name}
 %{pecl_xmldir}/%{name}.xml
 
 %config(noreplace) %{php_inidir}/%{ini_name}
 %{php_extdir}/%{pecl_name}.so
 
-%if %{with_zts}
-%config(noreplace) %{php_ztsinidir}/%{ini_name}
-%{php_ztsextdir}/%{pecl_name}.so
-%endif
-
 
 %changelog
+* Sat Jan 18 2025 Fedora Release Engineering <releng@fedoraproject.org> - 1.0.12-2
+- Rebuilt for https://fedoraproject.org/wiki/Fedora_42_Mass_Rebuild
+
+* Wed Dec  4 2024 Remi Collet <remi@remirepo.net> - 1.0.12-1
+- update to 1.0.12
+- drop patch merged upstream
+
+* Thu Oct 17 2024 Remi Collet <remi@fedoraproject.org> - 1.0.11-13
+- modernize the spec file
+
+* Mon Oct 14 2024 Remi Collet <remi@fedoraproject.org> - 1.0.11-12
+- rebuild for https://fedoraproject.org/wiki/Changes/php84
+- add patch for PHP 8.4 from
+  https://github.com/krakjoe/pcov/pull/111
+
+* Fri Jul 19 2024 Fedora Release Engineering <releng@fedoraproject.org> - 1.0.11-11
+- Rebuilt for https://fedoraproject.org/wiki/Fedora_41_Mass_Rebuild
+
+* Tue Apr 16 2024 Remi Collet <remi@remirepo.net> - 1.0.11-10
+- drop 32-bit support
+  https://fedoraproject.org/wiki/Changes/php_no_32_bit
+
+* Thu Jan 25 2024 Fedora Release Engineering <releng@fedoraproject.org> - 1.0.11-9
+- Rebuilt for https://fedoraproject.org/wiki/Fedora_40_Mass_Rebuild
+
+* Sun Jan 21 2024 Fedora Release Engineering <releng@fedoraproject.org> - 1.0.11-8
+- Rebuilt for https://fedoraproject.org/wiki/Fedora_40_Mass_Rebuild
+
+* Tue Oct 03 2023 Remi Collet <remi@remirepo.net> - 1.0.11-7
+- rebuild for https://fedoraproject.org/wiki/Changes/php83
+
+* Fri Jul 21 2023 Fedora Release Engineering <releng@fedoraproject.org> - 1.0.11-6
+- Rebuilt for https://fedoraproject.org/wiki/Fedora_39_Mass_Rebuild
+
+* Thu Apr 20 2023 Remi Collet <remi@remirepo.net> - 1.0.11-5
+- use SPDX license ID
+
+* Wed Oct 05 2022 Remi Collet <remi@remirepo.net> - 1.0.11-4
+- rebuild for https://fedoraproject.org/wiki/Changes/php82
+
+* Fri Jul 22 2022 Fedora Release Engineering <releng@fedoraproject.org> - 1.0.11-3
+- Rebuilt for https://fedoraproject.org/wiki/Fedora_37_Mass_Rebuild
+
+* Fri Jan 21 2022 Fedora Release Engineering <releng@fedoraproject.org> - 1.0.11-2
+- Rebuilt for https://fedoraproject.org/wiki/Fedora_36_Mass_Rebuild
+
 * Tue Dec 21 2021 Remi Collet <remi@remirepo.net> - 1.0.11-1
 - update to 1.0.11
 
 * Wed Nov 24 2021 Remi Collet <remi@remirepo.net> - 1.0.10-1
 - update to 1.0.10
 
+* Thu Oct 28 2021 Remi Collet <remi@remirepo.net> - 1.0.9-3
+- rebuild for https://fedoraproject.org/wiki/Changes/php81
+
+* Fri Jul 23 2021 Fedora Release Engineering <releng@fedoraproject.org> - 1.0.9-2
+- Rebuilt for https://fedoraproject.org/wiki/Fedora_35_Mass_Rebuild
+
+* Mon Jun  7 2021 Remi Collet <remi@remirepo.net> - 1.0.9-1
+- update to 1.0.9
+
 * Fri Mar 19 2021 Remi Collet <remi@remirepo.net> - 1.0.7-1
 - update to 1.0.7
+
+* Thu Mar  4 2021 Remi Collet <remi@remirepo.net> - 1.0.6-5
+- rebuild for https://fedoraproject.org/wiki/Changes/php80
+- add upstream patch for test suite with PHP 8
+
+* Wed Jan 27 2021 Fedora Release Engineering <releng@fedoraproject.org> - 1.0.6-4
+- Rebuilt for https://fedoraproject.org/wiki/Fedora_34_Mass_Rebuild
+
+* Tue Jul 28 2020 Fedora Release Engineering <releng@fedoraproject.org> - 1.0.6-3
+- Rebuilt for https://fedoraproject.org/wiki/Fedora_33_Mass_Rebuild
 
 * Thu Jan 30 2020 Fedora Release Engineering <releng@fedoraproject.org> - 1.0.6-2
 - Rebuilt for https://fedoraproject.org/wiki/Fedora_32_Mass_Rebuild
