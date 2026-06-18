@@ -46,13 +46,13 @@ jobs:
             build: rocky9build
             uploader: rocky9bintray
             repo_path: rocky/9
-          - compose-file: docker-compose.php81.yml
-            repo: php81custom
+          - compose-file: docker-compose.php85.yml
+            repo: php85custom
             build: rocky10build
             uploader: rocky10bintray
             repo_path: rocky/10
-          - compose-file: docker-compose.php81.yml
-            repo: php81custom
+          - compose-file: docker-compose.php85.yml
+            repo: php85custom
             build: rocky9build
             uploader: rocky9bintray
             repo_path: rocky/9
