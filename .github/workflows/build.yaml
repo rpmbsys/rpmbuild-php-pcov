@@ -8,10 +8,10 @@ env:
   BINTRAY_API_KEY: ${{ secrets.BINTRAY_API_KEY }}
   DOCKER_USER: ${{ secrets.DOCKER_USER }}
   DOCKER_PASS: ${{ secrets.DOCKER_PASS }}
-  RL9: 9.8.20260525.0
-  RL9TAG: 9.8.20260525.0
-  RL10: 10.2.20260525.0
-  RL10TAG: 10.2.20260525.0
+  RL9: 9.9.20261112.0
+  RL9TAG: 9.9.20261112.0
+  RL10: 10.3.20261112.0
+  RL10TAG: 10.3.20261112.0
 jobs:
   test:
     runs-on: ubuntu-latest
